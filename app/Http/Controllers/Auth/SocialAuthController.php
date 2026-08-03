@@ -4,18 +4,23 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Service\SubscriptionService;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthController extends Controller
 {
+    public function __construct(
+        private SubscriptionService $subscriptionService
+    ) {}
+
     private array $allowedProviders = ['google', 'apple'];
 
     public function redirect(string $provider)
     {
         abort_if(!in_array($provider, $this->allowedProviders), 404);
 
-        return Socialite::driver($provider)->redirect();
+        return Socialite::driver($provider)->stateless()->redirect();
     }
 
     public function callback(string $provider)
@@ -23,7 +28,7 @@ class SocialAuthController extends Controller
         abort_if(!in_array($provider, $this->allowedProviders), 404);
 
         try {
-            $socialUser = Socialite::driver($provider)->user();
+            $socialUser = Socialite::driver($provider)->stateless()->user();
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Authentication failed',
@@ -42,6 +47,12 @@ class SocialAuthController extends Controller
                 'password'          => bcrypt(Str::random(32)),
             ]
         );
+
+        // ── Cek whitelist domain ──
+        $isNewUser = $user->wasRecentlyCreated;
+        if ($isNewUser) {
+            $this->subscriptionService->assignOnRegister($user);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
