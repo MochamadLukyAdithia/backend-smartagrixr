@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Service;
+namespace App\Services;
 
 use App\Models\{AuditLog, DomainWhitelist, Plan, Payment, Subscription, User};
+use App\Services\DunningScheduler;
 use Illuminate\Support\Facades\DB;
 
 class SubscriptionService
@@ -80,6 +81,8 @@ class SubscriptionService
             reason: "Domain {$whitelist->domain} terdaftar sebagai instansi: {$whitelist->instansi_name}",
             metadata: ['domain' => $whitelist->domain, 'instansi_id' => $whitelist->id]
         );
+
+        DunningScheduler::schedule($subscription);
  
         return $subscription;
     }
@@ -139,6 +142,8 @@ class SubscriptionService
                 ],
                 reason: "Upgrade otomatis setelah pembayaran sukses untuk plan {$plan->name}",
             );
+
+            DunningScheduler::schedule($subscription);
 
             return $subscription;
         });

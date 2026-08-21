@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Service;
+namespace App\Services;
 
 use App\Models\{Payment, Plan, User, AuditLog};
 use Illuminate\Support\Str;
