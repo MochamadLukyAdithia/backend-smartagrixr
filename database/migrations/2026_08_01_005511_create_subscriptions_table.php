@@ -20,11 +20,10 @@ return new class extends Migration
                 'trial',
                 'expired',
                 'cancelled',
-                'past_due',   // gagal bayar tapi grace period
-                'pending'     // menunggu konfirmasi payment
+                'pending'
             ])->default('active');
             $table->enum('source', [
-                'free',       // default free
+                'free',
                 'paid',       // bayar via payment gateway
                 'instansi',   // email domain instansi
                 'trial',      // masa percobaan
@@ -36,6 +35,8 @@ return new class extends Migration
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
             $table->string('cancellation_reason')->nullable();
+            $table->timestamp('last_dunning_sent_at')->nullable()->after('cancelled_at');
+            $table->unsignedTinyInteger('dunning_step')->default(0)->after('last_dunning_sent_at');
             $table->timestamps();
         
             // Satu user hanya punya 1 subscription aktif

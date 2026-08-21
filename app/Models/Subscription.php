@@ -9,7 +9,8 @@ class Subscription extends Model
     protected $fillable = [
         'user_id', 'plan_id', 'status', 'source',
         'started_at', 'expires_at', 'trial_ends_at',
-        'cancelled_at', 'cancellation_reason'
+        'cancelled_at', 'cancellation_reason',
+        'last_dunning_sent_at', 'dunning_step',
     ];
  
     protected $casts = [
@@ -17,6 +18,8 @@ class Subscription extends Model
         'expires_at'    => 'datetime',
         'trial_ends_at' => 'datetime',
         'cancelled_at'  => 'datetime',
+        'last_dunning_sent_at' => 'datetime',
+        'dunning_step'         => 'integer',
     ];
  
     public function user()   { return $this->belongsTo(User::class); }
