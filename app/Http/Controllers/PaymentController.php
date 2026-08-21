@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\{AuditLog, Payment, Plan};
-use App\Service\{PaymentService, SubscriptionService};
+use App\Services\{PaymentService, SubscriptionService};
 use Illuminate\Http\Request;
  
 class PaymentController extends Controller

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
  
 use App\Http\Controllers\Controller;
 use App\Models\{AuditLog, User};
-use App\Service\SubscriptionService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Hash, RateLimiter};

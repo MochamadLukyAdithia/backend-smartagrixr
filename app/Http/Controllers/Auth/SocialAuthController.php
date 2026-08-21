@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Service\SubscriptionService;
+use App\Services\SubscriptionService;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
