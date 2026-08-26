@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Models\{Subscription, Payment, AuditLog};
+use App\Models\{Subscription, Payment, AuditLog, Classroom};
 
 class User extends Authenticatable
 {
@@ -26,6 +26,8 @@ class User extends Authenticatable
         'status',
         'failed_login_attempts',
         'locked_until',
+        'unej_role',
+        'is_unej_verified'
     ];
 
     protected $hidden = [
@@ -45,6 +47,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'locked_until' => 'datetime',
+            'is_unej_verified' => 'boolean'
         ];
     }
 
@@ -71,8 +74,27 @@ class User extends Authenticatable
     {
         return $this->hasMany(AuditLog::class);
     }
- 
-    // PERMISSION CHECKS
+
+    public function isDosen(): bool
+    {
+        return $this->unej_role === 'dosen' && $this->is_unej_verified;
+    }
+    
+    public function isMahasiswa(): bool
+    {
+        return $this->unej_role === 'mahasiswa' && $this->is_unej_verified;
+    }
+    
+    public function isUnejCivitas(): bool
+    {
+        return $this->is_unej_verified
+            && in_array($this->unej_role, ['dosen', 'mahasiswa', 'tendik']);
+    }
+    
+    public function isUmum(): bool
+    {
+        return $this->unej_role === 'umum' || !$this->is_unej_verified;
+    }
  
     /**
      * Cek apakah user punya akses Pro (aktif & tidak expired)
@@ -125,5 +147,18 @@ class User extends Authenticatable
         $sub = $this->activeSubscription;
         if (!$sub || !$sub->expires_at) return null; // null = selamanya
         return max(0, now()->diffInDays($sub->expires_at, false));
+    }
+
+    public function teachingClassrooms()
+    {
+        return $this->hasMany(Classroom::class, 'teacher_id');
+    }
+    
+    // Kelas yang diikuti (sebagai siswa)
+    public function enrolledClassrooms()
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_user')
+            ->withPivot('role', 'enrolled_at')
+            ->withTimestamps();
     }
 }
