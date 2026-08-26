@@ -4,7 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use App\Http\Middleware\{ValidateDomainWhitelist,RequireFeature,RequireRole};
+use App\Http\Middleware\{ValidateDomainWhitelist,RequireFeature,RequireRole, RequireUnejDosen};
 
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'domain.whitelist' => ValidateDomainWhitelist::class,
             'feature'          => RequireFeature::class,
             'role'             => RequireRole::class,
+            'unej.dosen'       => RequireUnejDosen::class,
         ]);
     })->withEvents(discover: [
         __DIR__ . '/../app/Listeners',

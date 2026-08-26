@@ -224,6 +224,13 @@ class AuthController extends Controller
  
         return response()->json([
             'user'        => $user,
+            'unej' => [
+                'is_unej'        => $user->isUnejCivitas(),
+                'role'           => $user->unej_role,
+                'is_verified'    => $user->is_unej_verified,
+                'can_create_class' => $user->isDosen(),
+                'can_join_class'   => true,
+            ],
             'permissions' => [
                 'is_pro'         => $user->isPro(),
                 'is_on_trial'    => $user->isOnTrial(),

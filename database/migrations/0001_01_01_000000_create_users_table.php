@@ -18,6 +18,13 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone')->nullable();
             $table->enum('status', ['active', 'suspended', 'unverified'])->default('unverified');
+            $table->enum('unej_role', [
+                'dosen',
+                'mahasiswa',
+                'tendik',
+                'umum',
+            ])->default('umum');
+            $table->boolean('is_unej_verified')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
