@@ -25,6 +25,10 @@ Route::post('/payment/webhook', [PaymentController::class, 'webhook']);
 
 // Deep link join
 Route::get('/join/{code}', [InviteController::class, 'join']);
+
+// Show Plans and detail
+Route::get('/plans', [PaymentController::class, 'showPlans']);
+Route::get('/plans/{slug}', [PaymentController::class, 'detailPlan']);
  
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -32,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout/all-devices', [AuthController::class, 'logoutAllDevices']);
- 
+
     // Permission check (digunakan oleh frontend sebelum render fitur)
     Route::get('/permission/check', [PermissionController::class, 'check']);
  
@@ -40,20 +44,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
     Route::get('/payment/history',   [PaymentController::class, 'history']);
  
-    // Pro-only routes (pakai middleware feature)
+    // Pro-only routes (pakai middleware feature) 
     Route::middleware('feature:upload_3d_asset')->group(function () {
         Route::post('/assets',       [AssetController::class, 'store']);
         Route::post('/generate-qr',  [QRController::class, 'generate']);
     });
- 
+
     Route::middleware('feature:create_class')->group(function () {
         Route::post('/classes', [ClassController::class, 'store']);
     });
- 
+
     Route::middleware('feature:analytics')->group(function () {
         Route::get('/analytics', [AnalyticsController::class, 'index']);
     });
- 
+
     // Admin routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/audit-logs',             [AuditLogController::class, 'index']);
@@ -92,7 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-if (app()->environment('local')) {
+// if (app()->environment('local')) {
 
     Route::get('/dev/login-as/{userId}', function (int $userId) {
         $user  = \App\Models\User::findOrFail($userId);
@@ -177,4 +181,4 @@ if (app()->environment('local')) {
 
         return response()->json(['token' => $token, 'user' => $user]);
     });
-}
+// }
