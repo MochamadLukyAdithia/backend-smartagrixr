@@ -11,6 +11,63 @@ class PaymentController extends Controller
         private PaymentService      $paymentService,
         private SubscriptionService $subscriptionService,
     ) {}
+
+    /**
+     * GET /api/plans — list semua plan aktif
+     */
+    public function showPlans()
+    {
+        $plans = Plan::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get()
+            ->map(function ($plan) {
+                return [
+                    'id'            => $plan->id,
+                    'name'          => $plan->name,
+                    'slug'          => $plan->slug,
+                    'description'   => $plan->description,
+                    'price'         => $plan->price,
+                    'price_formatted' => $plan->formattedPrice(),
+                    'billing_cycle' => $plan->billing_cycle,
+                    'max_assets'    => $plan->max_assets,
+                    'max_storage_mb'=> $plan->max_storage_mb,
+                    'max_classes'   => $plan->max_classes,
+                    'features'      => is_string($plan->features)
+                        ? json_decode($plan->features, true)
+                        : $plan->features,
+                ];
+            });
+
+        return response()->json(['data' => $plans]);
+    }
+
+    /**
+     * GET /api/plans/{slug} — detail satu plan
+     */
+    public function detailPlan(string $slug)
+    {
+        $plan = Plan::where('slug', $slug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        return response()->json([
+            'data' => [
+                'id'              => $plan->id,
+                'name'            => $plan->name,
+                'slug'            => $plan->slug,
+                'description'     => $plan->description,
+                'price'           => $plan->price,
+                'price_formatted' => $plan->formattedPrice(),
+                'billing_cycle'   => $plan->billing_cycle,
+                'max_assets'      => $plan->max_assets,
+                'max_storage_mb'  => $plan->max_storage_mb,
+                'max_classes'     => $plan->max_classes,
+                'features'        => is_string($plan->features)
+                    ? json_decode($plan->features, true)
+                    : $plan->features,
+            ]
+        ]);
+    }
  
     /**
      * Step 1: User klik upgrade → dapat Snap Token
