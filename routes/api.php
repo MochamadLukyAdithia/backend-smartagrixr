@@ -37,7 +37,7 @@ Route::get('/plans/{slug}', [PaymentController::class, 'detailPlan']);
 Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
  
 // Authenticated routes
-// Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
  
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -71,7 +71,7 @@ Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
         Route::post('/domain-whitelist',      [DomainWhitelistController::class, 'store']);
     });
 
-    // Route::middleware('unej.dosen')->group(function () {
+    Route::middleware('unej.dosen')->group(function () {
         Route::post('/classrooms',                         [ClassroomController::class, 'store']);
         Route::put('/classrooms/{id}',                     [ClassroomController::class, 'update']);
         Route::delete('/classrooms/{id}',                  [ClassroomController::class, 'destroy']);
@@ -80,7 +80,7 @@ Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
         Route::delete('/posts/{id}',                       [PostController::class, 'destroy']);
         Route::post('/submissions/{id}/grade',             [SubmissionController::class, 'grade']);
         // Route::post('/classrooms/{id}/invite-code/regenerate', [InviteController::class, 'regenerate']);
-    // });
+    });
 
     Route::get('/classrooms',                              [ClassroomController::class, 'index']);
     Route::get('/classrooms/{id}',                         [ClassroomController::class, 'show']);
@@ -99,29 +99,28 @@ Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
     Route::post('/comments/{id}/reply',                [CommentController::class, 'reply']);
     Route::delete('/comments/{id}',                    [CommentController::class, 'destroy']);
     Route::post('/posts/{id}/like',                    [LikeController::class, 'togglePost']);
-    Route::post('/comments/{id}/like',                 [LikeController::class, 'toggleComment']);
+    Route::post('/comments/{id}/like',                 [LikeController::class, 'toggleComment']);    
+});
 
-    Route::get('/projects',                     [ProjectController::class, 'index']);
-    Route::post('/projects',                    [ProjectController::class, 'store']);
-    Route::get('/projects/{id}/editor',         [ProjectController::class, 'loadEditor']);
-    Route::put('/projects/{id}/scene',          [ProjectController::class, 'saveScene']);
-    Route::put('/projects/{id}/publish',        [ProjectController::class, 'publish']);
-    Route::put('/projects/{id}/unpublish',      [ProjectController::class, 'unpublish']);
-    Route::delete('/projects/{id}',             [ProjectController::class, 'destroy']);
- 
-    Route::get('/assets',                       [AssetController::class, 'index']);
-    Route::get('/assets/{id}/url',              [AssetController::class, 'getUrl']);
-    Route::post('/assets/upload',               [AssetController::class, 'upload']);
-    Route::delete('/assets/{id}',               [AssetController::class, 'destroy']);
+Route::get('/projects',                     [ProjectController::class, 'index']);
+Route::post('/projects',                    [ProjectController::class, 'store']);
+Route::get('/projects/{id}/editor',         [ProjectController::class, 'loadEditor']);
+Route::put('/projects/{id}/scene',          [ProjectController::class, 'saveScene']);
+Route::put('/projects/{id}/publish',        [ProjectController::class, 'publish']);
+Route::put('/projects/{id}/unpublish',      [ProjectController::class, 'unpublish']);
+Route::delete('/projects/{id}',             [ProjectController::class, 'destroy']);
 
-    Route::get('/asset-categories',             [AssetCategoryController::class, 'index']);
-    Route::post('/asset-categories',            [AssetCategoryController::class, 'store']);
+Route::get('/assets',                       [AssetController::class, 'index']);
+Route::get('/assets/{id}/url',              [AssetController::class, 'getUrl']);
+Route::post('/assets/upload',               [AssetController::class, 'upload']);
+Route::delete('/assets/{id}',               [AssetController::class, 'destroy']);
 
-    // Route::prefix('admin')->middleware('role:admin')->group(function () {
-        Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
-        Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
-    // });
+Route::get('/asset-categories',             [AssetCategoryController::class, 'index']);
+Route::post('/asset-categories',            [AssetCategoryController::class, 'store']);
 
+// Route::prefix('admin')->middleware('role:admin')->group(function () {
+    Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
+    Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
 // });
 
 Route::get('/ar/project/{id}', function (int $id) {
