@@ -10,6 +10,9 @@ use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\AssetController;
+use App\Http\Controllers\AssetCategoryController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Middleware\ThrottleRegistration;
 use Illuminate\Http\Request;
@@ -29,6 +32,9 @@ Route::get('/join/{code}', [InviteController::class, 'join']);
 // Show Plans and detail
 Route::get('/plans', [PaymentController::class, 'showPlans']);
 Route::get('/plans/{slug}', [PaymentController::class, 'detailPlan']);
+
+// Public (cek kode tanpa login)
+Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
  
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -58,7 +64,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/analytics', [AnalyticsController::class, 'index']);
     });
 
-    // Admin routes
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/audit-logs',             [AuditLogController::class, 'index']);
         Route::get('/audit-logs/user/{id}',   [AuditLogController::class, 'forUser']);
@@ -74,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/classrooms/{id}/posts',              [PostController::class, 'store']);
         Route::delete('/posts/{id}',                       [PostController::class, 'destroy']);
         Route::post('/submissions/{id}/grade',             [SubmissionController::class, 'grade']);
-        Route::post('/classrooms/{id}/invite-code/regenerate', [InviteController::class, 'regenerate']);
+        // Route::post('/classrooms/{id}/invite-code/regenerate', [InviteController::class, 'regenerate']);
     });
 
     Route::get('/classrooms',                              [ClassroomController::class, 'index']);
@@ -82,7 +87,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/classrooms/{id}/members',                 [ClassroomController::class, 'members']);
     Route::get('/classrooms/{id}/feed',                    [PostController::class, 'feed']);
     Route::get('/posts/{id}/comments',                     [CommentController::class, 'index']);
-    Route::get('/classrooms/{id}/invite-code',            [InviteController::class, 'show']);
+    Route::get('/classrooms/{id}/invite-code',             [InviteController::class, 'show']);
+    Route::post('/classrooms/join/{code}',                 [InviteController::class, 'joinByCode']);
+    Route::post('/classrooms/{id}/invite-code/regenerate', [InviteController::class, 'regenerate']);
 
     Route::post('/classrooms/{id}/enroll',             [ClassroomController::class, 'enroll']);
     Route::delete('/classrooms/{id}/unenroll',         [ClassroomController::class, 'unenroll']);
@@ -94,6 +101,52 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/posts/{id}/like',                    [LikeController::class, 'togglePost']);
     Route::post('/comments/{id}/like',                 [LikeController::class, 'toggleComment']);
 
+    Route::get('/projects',                     [ProjectController::class, 'index']);
+    Route::post('/projects',                    [ProjectController::class, 'store']);
+    Route::get('/projects/{id}/editor',         [ProjectController::class, 'loadEditor']);
+    Route::put('/projects/{id}/scene',          [ProjectController::class, 'saveScene']);
+    Route::put('/projects/{id}/publish',        [ProjectController::class, 'publish']);
+    Route::put('/projects/{id}/unpublish',      [ProjectController::class, 'unpublish']);
+    Route::delete('/projects/{id}',             [ProjectController::class, 'destroy']);
+ 
+    Route::get('/assets',                       [AssetController::class, 'index']);
+    Route::get('/assets/{id}/url',              [AssetController::class, 'getUrl']);
+    Route::post('/assets/upload',               [AssetController::class, 'upload']);
+    Route::delete('/assets/{id}',               [AssetController::class, 'destroy']);
+
+    Route::get('/asset-categories',             [AssetCategoryController::class, 'index']);
+    Route::post('/asset-categories',            [AssetCategoryController::class, 'store']);
+
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
+        Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
+    });
+
+});
+
+Route::get('/ar/project/{id}', function (int $id) {
+    $project = \App\Models\Project::where('id', $id)
+        ->where('status', 'published')
+        ->firstOrFail();
+
+    $storageService = app(\App\Services\StorageService::class);
+
+    $objects = collect($project->scene_data['objects'] ?? [])
+        ->map(function ($obj) use ($storageService) {
+            $asset = \App\Models\Asset::find($obj['asset_id']);
+            if (!$asset) return null;
+
+            return array_merge($obj, [
+                'file_url' => $storageService->temporaryUrl($asset->file_path, 60),
+            ]);
+        })
+        ->filter()
+        ->values();
+
+    return response()->json([
+        'project'    => ['id' => $project->id, 'title' => $project->title],
+        'scene_data' => array_merge($project->scene_data, ['objects' => $objects]),
+    ]);
 });
 
 // if (app()->environment('local')) {
@@ -136,6 +189,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['token' => $token, 'user' => $user]);
     });
 
+
     // Login sebagai mahasiswa test
     Route::get('/dev/login-mahasiswa', function () {
         $user = \App\Models\User::firstOrCreate(
@@ -144,6 +198,29 @@ Route::middleware('auth:sanctum')->group(function () {
                 'name'             => 'Test Mahasiswa',
                 'password'         => bcrypt('password'),
                 'unej_role'        => 'mahasiswa',
+                'is_unej_verified' => true,
+                'status'           => 'active',
+                'email_verified_at'=> now(),
+            ]
+        );
+
+        if ($user->wasRecentlyCreated) {
+            app(\App\Services\SubscriptionService::class)->assignOnRegister($user);
+        }
+
+        $token = $user->createToken('dev_token')->plainTextToken;
+
+        return response()->json(['token' => $token, 'user' => $user]);
+    });
+
+    // Login sebagai admin test
+    Route::get('/dev/login-admin', function () {
+        $user = \App\Models\User::firstOrCreate(
+            ['email' => 'admin@test.local'],
+            [
+                'name'             => 'Test Admin',
+                'password'         => bcrypt('password'),
+                'unej_role'        => 'admin',
                 'is_unej_verified' => true,
                 'status'           => 'active',
                 'email_verified_at'=> now(),
