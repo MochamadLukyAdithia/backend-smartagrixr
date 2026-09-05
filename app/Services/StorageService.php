@@ -104,6 +104,36 @@ class StorageService
     }
  
     /**
+     * Upload thumbnail untuk aset 3D
+     * Path: thumbnails/{user_id}/{filename}
+     */
+    public function uploadThumbnail(
+        UploadedFile $file,
+        int $userId
+    ): array {
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
+            throw new \Exception('Hanya file .jpg, .jpeg, .png, .webp yang diizinkan untuk thumbnail');
+        }
+ 
+        $filename = $this->generateFilename($file->getClientOriginalName());
+        $path     = "thumbnails/{$userId}/{$filename}";
+ 
+        Storage::disk($this->disk)->put(
+            $path,
+            file_get_contents($file->getRealPath()),
+        );
+ 
+        return [
+            'path'     => $path,
+            'filename' => $filename,
+            'original' => $file->getClientOriginalName(),
+            'size'     => $file->getSize(),
+            'url'      => $this->temporaryUrl($path),
+        ];
+    }
+ 
+    /**
      * Generate temporary URL (berlaku 60 menit)
      * Dipakai untuk akses file private
      */

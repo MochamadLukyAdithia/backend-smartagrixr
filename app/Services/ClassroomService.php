@@ -7,6 +7,24 @@ use Illuminate\Support\Str;
  
 class ClassroomService
 {
+    public function getInviteData(Classroom $classroom): array
+    {
+        $joinUrl = config('app.frontend_url') . '/join/' . $classroom->invite_code;
+
+        return [
+            'invite_code' => $classroom->invite_code,
+            'join_url'    => $joinUrl,
+            // Untuk share ke WhatsApp, Telegram, dll
+            'share_links' => [
+                'whatsapp' => 'https://wa.me/?text=' . urlencode(
+                    "Bergabung ke kelas *{$classroom->name}* di SmartAgri XR!\n\n{$joinUrl}"
+                ),
+                'telegram' => 'https://t.me/share/url?url=' . urlencode($joinUrl) .
+                            '&text=' . urlencode("Bergabung ke kelas {$classroom->name}"),
+                'copy'     => $joinUrl,
+            ],
+        ];
+    }
     /**
      * Generate kode invite unik 6 karakter
      * Cek collision — generate ulang jika sudah ada

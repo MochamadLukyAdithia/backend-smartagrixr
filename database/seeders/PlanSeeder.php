@@ -20,10 +20,10 @@ class PlanSeeder extends Seeder
                 'max_assets'    => 3,
                 'max_storage_mb'=> 512,
                 'max_classes'   => 1,
-                'features'      => json_encode([
+                'features'      => [
                     'view_3d_asset',      // lihat model 3D
                     'scan_ar_marker',     // scan marker AR
-                ]),
+                ],
                 'sort_order'    => 1,
             ],
             [
@@ -35,7 +35,7 @@ class PlanSeeder extends Seeder
                 'max_assets'    => 999,
                 'max_storage_mb'=> 10240, // 10GB
                 'max_classes'   => 999,
-                'features'      => json_encode([
+                'features'      => [
                     'view_3d_asset',
                     'scan_ar_marker',
                     'upload_3d_asset',    // upload model GLB
@@ -44,7 +44,7 @@ class PlanSeeder extends Seeder
                     'analytics',          // lihat progres siswa
                     'custom_ar_marker',   // marker kustom
                     'ai_2d_to_3d',        // convert foto ke 3D
-                ]),
+                ],
                 'sort_order'    => 2,
             ],
             [
@@ -56,7 +56,7 @@ class PlanSeeder extends Seeder
                 'max_assets'    => -1,    // unlimited
                 'max_storage_mb'=> -1,
                 'max_classes'   => -1,
-                'features'      => json_encode([
+                'features'      => [
                     'view_3d_asset',
                     'scan_ar_marker',
                     'upload_3d_asset',
@@ -68,7 +68,7 @@ class PlanSeeder extends Seeder
                     'white_label',        // branding kustom
                     'api_access',         // akses REST API
                     'priority_support',   // dukungan prioritas
-                ]),
+                ],
                 'sort_order'    => 3,
             ],
         ];
