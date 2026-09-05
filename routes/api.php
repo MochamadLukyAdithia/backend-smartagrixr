@@ -37,7 +37,7 @@ Route::get('/plans/{slug}', [PaymentController::class, 'detailPlan']);
 Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
  
 // Authenticated routes
-Route::middleware('auth:sanctum')->group(function () {
+// Route::middleware('auth:sanctum')->group(function () {
  
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -71,7 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/domain-whitelist',      [DomainWhitelistController::class, 'store']);
     });
 
-    Route::middleware('unej.dosen')->group(function () {
+    // Route::middleware('unej.dosen')->group(function () {
         Route::post('/classrooms',                         [ClassroomController::class, 'store']);
         Route::put('/classrooms/{id}',                     [ClassroomController::class, 'update']);
         Route::delete('/classrooms/{id}',                  [ClassroomController::class, 'destroy']);
@@ -80,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/posts/{id}',                       [PostController::class, 'destroy']);
         Route::post('/submissions/{id}/grade',             [SubmissionController::class, 'grade']);
         // Route::post('/classrooms/{id}/invite-code/regenerate', [InviteController::class, 'regenerate']);
-    });
+    // });
 
     Route::get('/classrooms',                              [ClassroomController::class, 'index']);
     Route::get('/classrooms/{id}',                         [ClassroomController::class, 'show']);
@@ -117,12 +117,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/asset-categories',             [AssetCategoryController::class, 'index']);
     Route::post('/asset-categories',            [AssetCategoryController::class, 'store']);
 
-    Route::prefix('admin')->middleware('role:admin')->group(function () {
+    // Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
         Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
-    });
+    // });
 
-});
+// });
 
 Route::get('/ar/project/{id}', function (int $id) {
     $project = \App\Models\Project::where('id', $id)
