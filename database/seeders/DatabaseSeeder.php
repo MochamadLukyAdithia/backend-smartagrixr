@@ -5,7 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\{DomainWhitelist, Plan, AssetCategorySeeder};
+use App\Models\{DomainWhitelist, Plan};
+use Database\Seeders\AssetCategorySeeder;
 
 class DatabaseSeeder extends Seeder
 {
