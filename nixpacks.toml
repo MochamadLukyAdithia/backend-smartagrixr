@@ -1,0 +1,14 @@
+[variables]
+NIXPACKS_PHP_VERSION = "8.3"
+UPLOAD_MAX_FILESIZE = "100M"
+POST_MAX_SIZE = "100M"
+
+[phases.setup]
+nixPkgs = ["nginx"]
+cmds = [
+  'cp nginx.template.conf /etc/nginx/nginx.conf',
+  'PHP_INI=$(php -i | grep "Loaded Configuration File" | awk "{print \$5}" | head -1)',
+  'echo "upload_max_filesize=${UPLOAD_MAX_FILESIZE}" >> $PHP_INI',
+  'echo "post_max_size=${POST_MAX_SIZE}" >> $PHP_INI',
+  'echo "memory_limit=256M" >> $PHP_INI'
+]
