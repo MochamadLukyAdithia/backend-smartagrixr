@@ -261,9 +261,13 @@ Route::get('/ar/project/{id}', function (int $id) {
     });
 // }
 
-Route::get('/debug-php-config', function () {
-    return response()->json([
-        'upload_max_filesize' => ini_get('upload_max_filesize'),
-        'post_max_size'       => ini_get('post_max_size'),
-    ]);
+Route::get('/test-upload-config', function() {
+    return [
+        'nginx_limit' => '150M (via nginx.template.conf)',
+        'php_upload_max_filesize' => ini_get('upload_max_filesize'),
+        'php_post_max_size' => ini_get('post_max_size'),
+        'php_memory_limit' => ini_get('memory_limit'),
+        'filesystem_default' => config('filesystems.default'),
+        'upload_limits' => config('upload.limits.glb'),
+    ];
 });
