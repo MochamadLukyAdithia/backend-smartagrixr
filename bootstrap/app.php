@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'             => RequireRole::class,
             'unej.dosen'       => RequireUnejDosen::class,
         ]);
+
+        // Handle API authentication — don't redirect to login
+        $middleware->redirectToIfAuthenticated(
+            redirect: '/dashboard',
+        );
     })->withEvents(discover: [
         __DIR__ . '/../app/Listeners',
     ])
