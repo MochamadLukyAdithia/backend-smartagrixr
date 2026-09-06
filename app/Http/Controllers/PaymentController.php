@@ -3,10 +3,13 @@ namespace App\Http\Controllers;
 
 use App\Models\{AuditLog, Payment, Plan};
 use App\Services\{PaymentService, SubscriptionService};
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
  
 class PaymentController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private PaymentService      $paymentService,
         private SubscriptionService $subscriptionService,
@@ -38,7 +41,7 @@ class PaymentController extends Controller
                 ];
             });
 
-        return response()->json(['data' => $plans]);
+        return $this->success(['data' => $plans], 'Daftar plan berhasil diambil');
     }
 
     /**
@@ -48,25 +51,27 @@ class PaymentController extends Controller
     {
         $plan = Plan::where('slug', $slug)
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
 
-        return response()->json([
-            'data' => [
-                'id'              => $plan->id,
-                'name'            => $plan->name,
-                'slug'            => $plan->slug,
-                'description'     => $plan->description,
-                'price'           => $plan->price,
-                'price_formatted' => $plan->formattedPrice(),
-                'billing_cycle'   => $plan->billing_cycle,
-                'max_assets'      => $plan->max_assets,
-                'max_storage_mb'  => $plan->max_storage_mb,
-                'max_classes'     => $plan->max_classes,
-                'features'        => is_string($plan->features)
-                    ? json_decode($plan->features, true)
-                    : $plan->features,
-            ]
-        ]);
+        if (!$plan) {
+            return $this->notFound('Plan tidak ditemukan');
+        }
+
+        return $this->success([
+            'id'              => $plan->id,
+            'name'            => $plan->name,
+            'slug'            => $plan->slug,
+            'description'     => $plan->description,
+            'price'           => $plan->price,
+            'price_formatted' => $plan->formattedPrice(),
+            'billing_cycle'   => $plan->billing_cycle,
+            'max_assets'      => $plan->max_assets,
+            'max_storage_mb'  => $plan->max_storage_mb,
+            'max_classes'     => $plan->max_classes,
+            'features'        => is_string($plan->features)
+                ? json_decode($plan->features, true)
+                : $plan->features,
+        ], 'Detail plan berhasil diambil');
     }
  
     /**
@@ -80,7 +85,7 @@ class PaymentController extends Controller
         $user = $request->user();
 
         if ($plan->isFree()) {
-            return response()->json(['message' => 'Tidak perlu bayar untuk plan Free'], 400);
+            return $this->error('Tidak perlu bayar untuk plan Free', 400);
         }
 
         // Cek apakah masih ada pending payment yang belum expired untuk plan yang sama
@@ -102,12 +107,12 @@ class PaymentController extends Controller
 
         $result = $this->paymentService->createSnapToken($user, $plan);
 
-        return response()->json([
+        return $this->success([
             'snap_token' => $result['snap_token'],
             'order_id'   => $result['order_id'],
             'amount'     => $plan->price,
             'plan'       => $plan->name,
-        ]);
+        ], 'Snap token berhasil dibuat');
     }
  
     /**
@@ -160,6 +165,6 @@ class PaymentController extends Controller
             ->latest()
             ->paginate(10);
  
-        return response()->json($payments);
+        return $this->success($payments, 'Riwayat pembayaran berhasil diambil');
     }
 }

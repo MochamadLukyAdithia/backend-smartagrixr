@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Services\StorageService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
  
 class SubmissionController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private StorageService $storageService
     ) {}
@@ -17,15 +20,19 @@ class SubmissionController extends Controller
      */
     public function submit(Request $request, int $assignmentId)
     {
-        $assignment = \App\Models\Assignment::with('post.classroom')->findOrFail($assignmentId);
+        $assignment = \App\Models\Assignment::with('post.classroom')->find($assignmentId);
         $user       = $request->user();
+
+        if (!$assignment) {
+            return $this->notFound('Assignment tidak ditemukan');
+        }
  
         if (!$assignment->post->classroom->isStudent($user->id)) {
-            return response()->json(['message' => 'Kamu bukan anggota kelas ini'], 403);
+            return $this->forbidden('Kamu bukan anggota kelas ini');
         }
  
         if ($assignment->isExpired() && !$assignment->allow_late) {
-            return response()->json(['message' => 'Deadline sudah lewat'], 400);
+            return $this->error('Deadline sudah lewat', 400);
         }
  
         $request->validate([
@@ -51,7 +58,7 @@ class SubmissionController extends Controller
                     foreach ($attachments as $uploaded) {
                         $this->storageService->delete($uploaded['path']);
                     }
-                    return response()->json(['message' => $e->getMessage()], 422);
+                    return $this->error($e->getMessage(), 422);
                 }
             }
         }
@@ -78,10 +85,10 @@ class SubmissionController extends Controller
         );
  
         // Return dengan temporary URL
-        return response()->json([
+        return $this->success([
             'submission'  => $submission,
             'attachments' => $this->resolveUrls($submission->attachments ?? []),
-        ], 201);
+        ], 'Tugas berhasil dikumpulkan', 201);
     }
  
     /**
@@ -105,7 +112,7 @@ class SubmissionController extends Controller
         $attachments = $submission->attachments ?? [];
  
         if (!isset($attachments[$fileIndex])) {
-            return response()->json(['message' => 'File tidak ditemukan'], 404);
+            return $this->notFound('File tidak ditemukan');
         }
  
         $file = $attachments[$fileIndex];
@@ -113,11 +120,11 @@ class SubmissionController extends Controller
         // Generate temporary URL berlaku 15 menit
         $url = $this->storageService->temporaryUrl($file['path'], 15);
  
-        return response()->json([
+        return $this->success([
             'url'      => $url,
             'filename' => $file['original'],
             'expires'  => now()->addMinutes(15)->toISOString(),
-        ]);
+        ], 'URL download berhasil dibuat');
     }
  
     /**
@@ -126,10 +133,14 @@ class SubmissionController extends Controller
      */
     public function index(Request $request, int $assignmentId)
     {
-        $assignment = \App\Models\Assignment::with('post.classroom')->findOrFail($assignmentId);
+        $assignment = \App\Models\Assignment::with('post.classroom')->find($assignmentId);
+
+        if (!$assignment) {
+            return $this->notFound('Assignment tidak ditemukan');
+        }
  
         if (!$assignment->post->classroom->isTeacher($request->user()->id)) {
-            return response()->json(['message' => 'Hanya guru yang bisa lihat semua submission'], 403);
+            return $this->forbidden('Hanya guru yang bisa melihat semua submission');
         }
  
         $submissions = $assignment->submissions()
@@ -142,12 +153,12 @@ class SubmissionController extends Controller
                 return $sub;
             });
  
-        return response()->json([
+        return $this->success([
             'total'     => $submissions->count(),
             'submitted' => $submissions->where('status', 'submitted')->count(),
             'graded'    => $submissions->where('status', 'graded')->count(),
             'data'      => $submissions,
-        ]);
+        ], 'Daftar submission berhasil diambil');
     }
  
     /**
@@ -157,10 +168,14 @@ class SubmissionController extends Controller
     public function grade(Request $request, int $submissionId)
     {
         $submission = \App\Models\Submission::with('assignment.post.classroom')
-            ->findOrFail($submissionId);
+            ->find($submissionId);
+
+        if (!$submission) {
+            return $this->notFound('Submission tidak ditemukan');
+        }
  
         if (!$submission->assignment->post->classroom->isTeacher($request->user()->id)) {
-            return response()->json(['message' => 'Hanya guru yang bisa beri nilai'], 403);
+            return $this->forbidden('Hanya guru yang bisa memberi nilai');
         }
  
         $data = $request->validate([
@@ -174,7 +189,7 @@ class SubmissionController extends Controller
             'status'   => 'graded',
         ]);
  
-        return response()->json($submission);
+        return $this->success($submission, 'Nilai berhasil diberikan');
     }
  
     /**

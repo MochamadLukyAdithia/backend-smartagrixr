@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
  
 use App\Models\Project;
 use App\Services\EditorService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
  
 class ProjectController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private EditorService $editorService) {}
  
     /**
@@ -22,7 +25,7 @@ class ProjectController extends Controller
             ->latest()
             ->paginate(12);
  
-        return response()->json($projects);
+        return $this->success($projects, 'Daftar project berhasil diambil');
     }
  
     /**
@@ -49,7 +52,7 @@ class ProjectController extends Controller
             ],
         ]);
  
-        return response()->json($project, 201);
+        return $this->success($project, 'Project berhasil dibuat', 201);
     }
  
     /**
@@ -58,25 +61,34 @@ class ProjectController extends Controller
      */
     public function loadEditor(Request $request, int $id)
     {
-        $project   = Project::where('id', $id)
+        $project = Project::where('id', $id)
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$project) {
+            return $this->notFound('Project tidak ditemukan atau bukan milik Anda');
+        }
  
         $sessionId = $request->header('X-Editor-Session', Str::uuid()->toString());
  
         // Cek concurrent edit
         if ($project->hasActiveEditorSession($sessionId)) {
             return response()->json([
-                'warning'    => 'Project sedang dibuka di tab/device lain.',
-                'session_id' => $sessionId,
-                'data'       => $this->editorService->loadEditorData($project, $sessionId),
+                'success' => true,
+                'message' => 'Project sedang dibuka di tab/device lain',
+                'status_code' => 200,
+                'data' => [
+                    'session_id' => $sessionId,
+                    'editor_data' => $this->editorService->loadEditorData($project, $sessionId),
+                    'warning' => 'Project sedang dibuka di tab/device lain.',
+                ],
             ]);
         }
  
-        return response()->json([
+        return $this->success([
             'session_id' => $sessionId,
-            'data'       => $this->editorService->loadEditorData($project, $sessionId),
-        ]);
+            'editor_data' => $this->editorService->loadEditorData($project, $sessionId),
+        ], 'Data editor berhasil dimuat');
     }
  
     /**
@@ -87,7 +99,11 @@ class ProjectController extends Controller
     {
         $project = Project::where('id', $id)
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$project) {
+            return $this->notFound('Project tidak ditemukan atau bukan milik Anda');
+        }
  
         $request->validate([
             'scene_data'                            => 'required|array',
@@ -124,10 +140,10 @@ class ProjectController extends Controller
             sessionId: $sessionId,
         );
  
-        return response()->json([
-            'message'  => 'Scene tersimpan',
+        return $this->success([
+            'session_id' => $sessionId,
             'saved_at' => now()->toISOString(),
-        ]);
+        ], 'Scene berhasil tersimpan');
     }
  
     /**
@@ -138,17 +154,18 @@ class ProjectController extends Controller
     {
         $project = Project::where('id', $id)
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$project) {
+            return $this->notFound('Project tidak ditemukan atau bukan milik Anda');
+        }
  
         try {
             $result = $this->editorService->publishProject($project, $request->user());
  
-            return response()->json([
-                'message' => 'Project berhasil dipublish!',
-                ...$result,
-            ]);
+            return $this->success($result, 'Project berhasil dipublish!', 200);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return $this->error($e->getMessage(), 422);
         }
     }
  
@@ -160,11 +177,15 @@ class ProjectController extends Controller
     {
         $project = Project::where('id', $id)
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$project) {
+            return $this->notFound('Project tidak ditemukan atau bukan milik Anda');
+        }
  
         $project->update(['status' => 'draft']);
  
-        return response()->json(['message' => 'Project dikembalikan ke draft']);
+        return $this->success($project, 'Project dikembalikan ke draft');
     }
  
     /**
@@ -175,10 +196,14 @@ class ProjectController extends Controller
     {
         $project = Project::where('id', $id)
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$project) {
+            return $this->notFound('Project tidak ditemukan atau bukan milik Anda');
+        }
  
         $project->delete();
  
-        return response()->json(['message' => 'Project dihapus']);
+        return $this->success(null, 'Project berhasil dihapus');
     }
 }

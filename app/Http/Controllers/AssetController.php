@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\AssetCategory;
 use App\Services\StorageService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
  
 class AssetController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private StorageService $storageService) {}
  
     /**
@@ -47,10 +50,10 @@ class AssetController extends Controller
                 : null,
         ]);
  
-        return response()->json([
+        return $this->success([
             'my_assets'     => $resolve($myAssets),
             'public_assets' => $resolve($publicAssets),
-        ]);
+        ], 'Daftar aset berhasil diambil');
     }
  
     /**
@@ -60,7 +63,11 @@ class AssetController extends Controller
      */
     public function getUrl(Request $request, int $id)
     {
-        $asset = Asset::findOrFail($id);
+        $asset = Asset::find($id);
+
+        if (!$asset) {
+            return $this->notFound('Aset tidak ditemukan');
+        }
  
         // Cek akses: milik user, atau publik, atau user Pro (untuk aset Pro)
         $canAccess = $asset->user_id === $request->user()->id
@@ -68,16 +75,13 @@ class AssetController extends Controller
             || ($asset->is_pro && $request->user()->isPro());
  
         if (!$canAccess) {
-            return response()->json([
-                'message'     => 'Aset Pro memerlukan akun Pro.',
-                'upgrade_url' => '/pricing',
-            ], 403);
+            return $this->error('Aset Pro memerlukan akun Pro.', 403, ['upgrade_url' => '/pricing']);
         }
  
-        return response()->json([
+        return $this->success([
             'url'     => $this->storageService->temporaryUrl($asset->file_path, 30),
             'expires' => now()->addMinutes(30)->toISOString(),
-        ]);
+        ], 'URL aset berhasil dibuat');
     }
  
     /**
@@ -88,10 +92,7 @@ class AssetController extends Controller
     {
         // Cek feature flag
         if (!$request->user()->hasFeature('upload_3d_asset')) {
-            return response()->json([
-                'message'     => 'Upload aset 3D memerlukan akun Pro.',
-                'upgrade_url' => '/pricing',
-            ], 403);
+            return $this->error('Upload aset 3D memerlukan akun Pro.', 403, ['upgrade_url' => '/pricing']);
         }
 
         $user = $request->user();
@@ -101,10 +102,11 @@ class AssetController extends Controller
             // Cek kuota jumlah aset
             $currentAssetCount = Asset::where('user_id', $user->id)->count();
             if ($plan->max_assets !== -1 && $currentAssetCount >= $plan->max_assets) {
-                return response()->json([
-                    'message'     => "Kuota aset plan {$plan->name} sudah penuh ({$plan->max_assets} aset). Upgrade untuk menambah kuota.",
-                    'upgrade_url' => '/pricing',
-                ], 403);
+                return $this->error(
+                    "Kuota aset plan {$plan->name} sudah penuh ({$plan->max_assets} aset). Upgrade untuk menambah kuota.",
+                    403,
+                    ['upgrade_url' => '/pricing']
+                );
             }
 
             // Cek kuota storage
@@ -112,10 +114,11 @@ class AssetController extends Controller
             $incomingFileMb   = $request->file('file')->getSize() / 1024 / 1024;
 
             if ($plan->max_storage_mb !== -1 && ($currentStorageMb + $incomingFileMb) > $plan->max_storage_mb) {
-                return response()->json([
-                    'message'     => "Kuota storage plan {$plan->name} tidak cukup. Sisa: " . round($plan->max_storage_mb - $currentStorageMb, 2) . " MB.",
-                    'upgrade_url' => '/pricing',
-                ], 403);
+                return $this->error(
+                    "Kuota storage plan {$plan->name} tidak cukup. Sisa: " . round($plan->max_storage_mb - $currentStorageMb, 2) . " MB.",
+                    403,
+                    ['upgrade_url' => '/pricing']
+                );
             }
         }
  
@@ -133,7 +136,7 @@ class AssetController extends Controller
         // Validasi ekstensi
         $ext = strtolower($file->getClientOriginalExtension());
         if (!in_array($ext, ['glb', 'gltf'])) {
-            return response()->json(['message' => 'Hanya file .glb dan .gltf yang diizinkan'], 422);
+            return $this->error('Hanya file .glb dan .gltf yang diizinkan', 422);
         }
  
         // Upload ke R2
@@ -172,12 +175,12 @@ class AssetController extends Controller
                 'file_size'      => $file->getSize(),
             ]);
 
-            return response()->json([
+            return $this->success([
                 'id'       => $asset->id,
                 'name'     => $asset->name,
                 'category' => $asset->category,
                 'file_url' => $this->storageService->temporaryUrl($uploaded['path'], 30),
-            ], 201);
+            ], 'Aset berhasil diupload', 201);
 
         } catch (\Throwable $e) {
             // Membersihkan file yang terupload
@@ -189,7 +192,7 @@ class AssetController extends Controller
 
             \Log::error('Gagal menyimpan asset setelah upload ke R2', ['error' => $e->getMessage()]);
 
-            return response()->json(['message' => 'Gagal menyimpan aset. Coba lagi.'], 500);
+            return $this->error('Gagal menyimpan aset. Coba lagi.', 500);
         }
  
  
@@ -203,14 +206,19 @@ class AssetController extends Controller
     {
         $asset = Asset::where('id', $id)
             ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            ->first();
+
+        if (!$asset) {
+            return $this->notFound('Aset tidak ditemukan atau bukan milik Anda');
+        }
  
         // Cek apakah masih dipakai di project lain
         $usedInProjects = $asset->projects()->count();
         if ($usedInProjects > 0) {
-            return response()->json([
-                'message' => "Aset masih digunakan di {$usedInProjects} project. Hapus dari project dulu.",
-            ], 422);
+            return $this->error(
+                "Aset masih digunakan di {$usedInProjects} project. Hapus dari project dulu.",
+                422
+            );
         }
  
         // Hapus file dari R2
@@ -221,6 +229,6 @@ class AssetController extends Controller
  
         $asset->delete();
  
-        return response()->json(['message' => 'Aset berhasil dihapus']);
+        return $this->success(null, 'Aset berhasil dihapus');
     }
 }

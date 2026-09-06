@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+
 class CommentController extends Controller
 {
     /**
@@ -32,7 +34,7 @@ class CommentController extends Controller
             return $comment;
         });
  
-        return response()->json($comments);
+        return $this->success($comments, 'Daftar komentar berhasil diambil');
     }
  
     /**
@@ -44,7 +46,7 @@ class CommentController extends Controller
  
         // Hanya member kelas yang bisa comment
         if (!$post->classroom->isMember($request->user()->id)) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+            return $this->forbidden('Anda bukan member kelas ini');
         }
  
         $data = $request->validate([
@@ -58,8 +60,9 @@ class CommentController extends Controller
             'body'      => $data['body'],
         ]);
  
-        return response()->json(
+        return $this->success(
             $comment->load('user:id,name,avatar'),
+            'Komentar berhasil dibuat',
             201
         );
     }
@@ -77,7 +80,7 @@ class CommentController extends Controller
         }
  
         if (!$parent->post->classroom->isMember($request->user()->id)) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+            return $this->forbidden('Anda bukan member kelas ini');
         }
  
         $data = $request->validate([
@@ -91,8 +94,9 @@ class CommentController extends Controller
             'body'      => $data['body'],
         ]);
  
-        return response()->json(
+        return $this->success(
             $reply->load('user:id,name,avatar'),
+            'Balasan berhasil dibuat',
             201
         );
     }
@@ -114,6 +118,6 @@ class CommentController extends Controller
  
         $comment->delete();
  
-        return response()->json(['message' => 'Comment dihapus']);
+        return $this->success(null, 'Komentar berhasil dihapus');
     }
 }

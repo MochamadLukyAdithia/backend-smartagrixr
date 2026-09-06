@@ -3,40 +3,50 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Assignment, Material, Post, Classroom};
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
  
 class PostController extends Controller
 {
+    use ApiResponse;
     // GET /classrooms/{id}/feed — ambil semua post kronologis
     public function feed(Request $request, int $classroomId)
     {
-        $classroom = Classroom::findOrFail($classroomId);
+        $classroom = Classroom::find($classroomId);
+
+        if (!$classroom) {
+            return $this->notFound('Classroom tidak ditemukan');
+        }
  
         if (!$classroom->isMember($request->user()->id)) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+            return $this->forbidden('Anda bukan member dari classroom ini');
         }
  
         $posts = Post::where('classroom_id', $classroomId)
-            ->whereNotNull('published_at')   // hanya yang published
+            ->whereNotNull('published_at')
             ->with([
                 'author:id,name,avatar',
                 'assignment',
                 'material',
             ])
-            ->orderByDesc('is_pinned')       // pinned di atas
-            ->orderByDesc('published_at')    // terbaru dulu
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
             ->paginate(15);
  
-        return response()->json($posts);
+        return $this->success($posts, 'Feed berhasil diambil');
     }
  
     // POST /classrooms/{id}/posts — guru buat post
     public function store(Request $request, int $classroomId)
     {
-        $classroom = \App\Models\Classroom::findOrFail($classroomId);
+        $classroom = Classroom::find($classroomId);
+
+        if (!$classroom) {
+            return $this->notFound('Classroom tidak ditemukan');
+        }
     
         if (!$classroom->isTeacher($request->user()->id)) {
-            return response()->json(['message' => 'Hanya guru yang bisa posting'], 403);
+            return $this->forbidden('Hanya guru yang bisa membuat post');
         }
     
         // Normalisasi input 'files' agar selalu bertipe array (antisipasi jika client mengirim single file tanpa format files[])
@@ -128,8 +138,9 @@ class PostController extends Controller
             }
         });
     
-        return response()->json(
+        return $this->success(
             $post->load(['author', 'assignment', 'material']),
+            'Post berhasil dibuat',
             201
         );
     }
@@ -137,15 +148,20 @@ class PostController extends Controller
     // DELETE /posts/{id} — hapus post
     public function destroy(Request $request, int $postId)
     {
-        $post      = Post::findOrFail($postId);
+        $post = Post::find($postId);
+
+        if (!$post) {
+            return $this->notFound('Post tidak ditemukan');
+        }
+
         $classroom = $post->classroom;
  
         if (!$classroom->isTeacher($request->user()->id)) {
-            return response()->json(['message' => 'Hanya guru yang bisa hapus post'], 403);
+            return $this->forbidden('Hanya guru yang bisa menghapus post');
         }
  
         $post->delete();
  
-        return response()->json(['message' => 'Post berhasil dihapus']);
+        return $this->success(null, 'Post berhasil dihapus');
     }
 }

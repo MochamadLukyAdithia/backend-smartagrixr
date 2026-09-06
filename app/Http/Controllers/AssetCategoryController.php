@@ -3,19 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\AssetCategory;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class AssetCategoryController extends Controller
 {
+    use ApiResponse;
+
     /**
      * GET /api/asset-categories
      * Public — dipakai FE untuk dropdown saat upload
      */
     public function index()
     {
-        return response()->json(
-            AssetCategory::orderBy('name')->get(['id', 'name', 'slug', 'description'])
-        );
+        $categories = AssetCategory::orderBy('name')->get(['id', 'name', 'slug', 'description']);
+        return $this->success($categories, 'Kategori aset berhasil diambil');
     }
 
     /**
@@ -24,17 +26,14 @@ class AssetCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name'        => 'required|string|max:100|unique:asset_categories,name',
             'description' => 'nullable|string|max:255',
         ]);
 
-        $category = AssetCategory::create([
-            'name'        => $request->name,
-            'description' => $request->description,
-        ]);
+        $category = AssetCategory::create($validated);
 
-        return response()->json($category, 201);
+        return $this->success($category, 'Kategori berhasil dibuat', 201);
     }
 
     /**
@@ -43,16 +42,20 @@ class AssetCategoryController extends Controller
      */
     public function update(Request $request, int $id)
     {
-        $category = AssetCategory::findOrFail($id);
+        $category = AssetCategory::find($id);
 
-        $request->validate([
+        if (!$category) {
+            return $this->notFound('Kategori tidak ditemukan');
+        }
+
+        $validated = $request->validate([
             'name'        => 'sometimes|string|max:100|unique:asset_categories,name,' . $id,
             'description' => 'nullable|string|max:255',
         ]);
 
-        $category->update($request->only('name', 'description'));
+        $category->update($validated);
 
-        return response()->json($category);
+        return $this->success($category, 'Kategori berhasil diperbarui');
     }
 
     /**
@@ -61,9 +64,15 @@ class AssetCategoryController extends Controller
      */
     public function destroy(int $id)
     {
-        $category = AssetCategory::findOrFail($id);
+        $category = AssetCategory::find($id);
+
+        if (!$category) {
+            return $this->notFound('Kategori tidak ditemukan');
+        }
+
         $category->delete();
 
-        return response()->json(['message' => 'Kategori berhasil dihapus']);
+        return $this->success(null, 'Kategori berhasil dihapus');
     }
 }
+

@@ -4,22 +4,31 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Services\ClassroomService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+
 class InviteController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private ClassroomService $classroomService) {}
  
     // GET /classrooms/{id}/invite-code — lihat kode saat ini
     public function show(Request $request, int $id)
     {
-        $classroom = Classroom::findOrFail($id);
+        $classroom = Classroom::find($id);
 
-        if (!$classroom->isTeacher($request->user()->id)) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+        if (!$classroom) {
+            return $this->notFound('Classroom tidak ditemukan');
         }
 
-        return response()->json(
-            $this->classroomService->getInviteData($classroom)
+        if (!$classroom->isTeacher($request->user()->id)) {
+            return $this->forbidden('Hanya guru yang bisa melihat kode invite');
+        }
+
+        return $this->success(
+            $this->classroomService->getInviteData($classroom),
+            'Data invite berhasil diambil'
         );
     }
 
@@ -34,21 +43,15 @@ class InviteController extends Controller
             ->first();
 
         if (!$classroom) {
-            return response()->json([
-                'valid'   => false,
-                'message' => 'Kode kelas tidak ditemukan atau tidak aktif',
-            ], 404);
+            return $this->error('Kode kelas tidak ditemukan atau tidak aktif', 404);
         }
 
-        return response()->json([
-            'valid'     => true,
-            'classroom' => [
-                'id'      => $classroom->id,
-                'name'    => $classroom->name,
-                'subject' => $classroom->subject,
-                'teacher' => $classroom->teacher->name,
-            ],
-        ]);
+        return $this->success([
+            'id'      => $classroom->id,
+            'name'    => $classroom->name,
+            'subject' => $classroom->subject,
+            'teacher' => $classroom->teacher->name,
+        ], 'Informasi kelas berhasil diambil');
     }
 
     // POST /api/classrooms/join/{code}
@@ -61,32 +64,34 @@ class InviteController extends Controller
                 $code
             );
 
-            return response()->json([
-                'message'      => "Berhasil bergabung ke kelas {$classroom->name}!",
+            return $this->success([
                 'classroom_id' => $classroom->id,
                 'redirect'     => "/classroom/{$classroom->id}",
-            ]);
+            ], "Berhasil bergabung ke kelas {$classroom->name}!");
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->error($e->getMessage(), 400);
         }
     }
  
     // POST /classrooms/{id}/invite-code/regenerate — generate kode baru
     public function regenerate(Request $request, int $id)
     {
-        $classroom = Classroom::findOrFail($id);
+        $classroom = Classroom::find($id);
+
+        if (!$classroom) {
+            return $this->notFound('Classroom tidak ditemukan');
+        }
  
         if (!$classroom->isTeacher($request->user()->id)) {
-            return response()->json(['message' => 'Hanya guru yang bisa regenerate invite code'], 403);
+            return $this->forbidden('Hanya guru yang bisa membuat kode invite baru');
         }
  
         $newCode = $this->classroomService->regenerateInviteCode($classroom);
  
-        return response()->json([
+        return $this->success([
             'invite_code' => $newCode,
             'join_url'    => url("/join/{$newCode}"),
-            'message'     => 'Kode lama sudah tidak berlaku',
-        ]);
+        ], 'Kode lama sudah tidak berlaku');
     }
  
     // GET /join/{code} — deep link join kelas
@@ -100,15 +105,12 @@ class InviteController extends Controller
         try {
             $classroom = $this->classroomService->enrollByCode($request->user(), $code);
  
-            return response()->json([
-                'message'   => "Berhasil bergabung ke kelas: {$classroom->name}",
-                'classroom' => $classroom,
-            ]);
+            return $this->success($classroom, "Berhasil bergabung ke kelas: {$classroom->name}");
  
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return response()->json(['message' => 'Kode kelas tidak ditemukan atau tidak aktif'], 404);
+            return $this->notFound('Kode kelas tidak ditemukan atau tidak aktif');
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
+            return $this->error($e->getMessage(), 400);
         }
     }
 }
