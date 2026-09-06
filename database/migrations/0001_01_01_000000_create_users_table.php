@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('username', 15)->unique()->nullable();
             $table->string('email')->unique();
             $table->string('password');
             $table->string('phone')->nullable();
@@ -26,6 +27,8 @@ return new class extends Migration
             ])->default('umum');
             $table->boolean('is_unej_verified')->default(false);
             $table->timestamp('email_verified_at')->nullable();
+            $table->string('email_verification_token')->nullable();
+            $table->timestamp('email_verification_sent_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

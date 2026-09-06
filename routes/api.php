@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::post('/register', [AuthController::class, 'register'])->middleware(ThrottleRegistration::class)->middleware('domain.whitelist');
+Route::post('/auth/verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/auth/resend-verification', [AuthController::class, 'resendVerification']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -100,28 +102,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/comments/{id}',                    [CommentController::class, 'destroy']);
     Route::post('/posts/{id}/like',                    [LikeController::class, 'togglePost']);
     Route::post('/comments/{id}/like',                 [LikeController::class, 'toggleComment']);    
+
+    Route::get('/projects',                     [ProjectController::class, 'index']);
+    Route::post('/projects',                    [ProjectController::class, 'store']);
+    Route::get('/projects/{id}/editor',         [ProjectController::class, 'loadEditor']);
+    Route::put('/projects/{id}/scene',          [ProjectController::class, 'saveScene']);
+    Route::put('/projects/{id}/publish',        [ProjectController::class, 'publish']);
+    Route::put('/projects/{id}/unpublish',      [ProjectController::class, 'unpublish']);
+    Route::delete('/projects/{id}',             [ProjectController::class, 'destroy']);
+
+    Route::get('/assets',                       [AssetController::class, 'index']);
+    Route::get('/assets/{id}/url',              [AssetController::class, 'getUrl']);
+    Route::post('/assets/upload',               [AssetController::class, 'upload']);
+    Route::delete('/assets/{id}',               [AssetController::class, 'destroy']);
+
+    Route::get('/asset-categories',             [AssetCategoryController::class, 'index']);
+    Route::post('/asset-categories',            [AssetCategoryController::class, 'store']);
+
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
+        Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
+    });
 });
-
-Route::get('/projects',                     [ProjectController::class, 'index']);
-Route::post('/projects',                    [ProjectController::class, 'store']);
-Route::get('/projects/{id}/editor',         [ProjectController::class, 'loadEditor']);
-Route::put('/projects/{id}/scene',          [ProjectController::class, 'saveScene']);
-Route::put('/projects/{id}/publish',        [ProjectController::class, 'publish']);
-Route::put('/projects/{id}/unpublish',      [ProjectController::class, 'unpublish']);
-Route::delete('/projects/{id}',             [ProjectController::class, 'destroy']);
-
-Route::get('/assets',                       [AssetController::class, 'index']);
-Route::get('/assets/{id}/url',              [AssetController::class, 'getUrl']);
-Route::post('/assets/upload',               [AssetController::class, 'upload']);
-Route::delete('/assets/{id}',               [AssetController::class, 'destroy']);
-
-Route::get('/asset-categories',             [AssetCategoryController::class, 'index']);
-Route::post('/asset-categories',            [AssetCategoryController::class, 'store']);
-
-// Route::prefix('admin')->middleware('role:admin')->group(function () {
-    Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
-    Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
-// });
 
 Route::get('/ar/project/{id}', function (int $id) {
     $project = \App\Models\Project::where('id', $id)

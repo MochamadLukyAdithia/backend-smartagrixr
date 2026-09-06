@@ -10,14 +10,17 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\{Subscription, Payment, AuditLog, Classroom};
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, MustVerifyEmailTrait;
 
     protected $fillable = [
         'name',
         'email',
+        'username',
         'password',
         'provider',
         'provider_id',
@@ -27,7 +30,9 @@ class User extends Authenticatable
         'failed_login_attempts',
         'locked_until',
         'unej_role',
-        'is_unej_verified'
+        'is_unej_verified',
+        'email_verification_token',
+        'email_verification_sent_at',
     ];
 
     protected $hidden = [
@@ -47,7 +52,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'locked_until' => 'datetime',
-            'is_unej_verified' => 'boolean'
+            'is_unej_verified' => 'boolean',
+            'email_verification_sent_at' => 'datetime'
         ];
     }
 
