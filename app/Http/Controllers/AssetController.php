@@ -24,22 +24,21 @@ class AssetController extends Controller
  
         // Aset milik user sendiri
         $myAssets = Asset::where('user_id', $user->id)
-            ->where('type', 'glb')
-            ->select(['id', 'name', 'category_id', 'thumbnail_path', 'is_pro', 'is_public', 'file_size'])
+            ->select(['id', 'name', 'category_id', 'thumbnail_path', 'is_pro', 'is_public', 'file_size', 'type'])
             ->latest()
             ->get();
  
         // Library publik SmartAgri (bukan milik user)
         $publicAssets = Asset::where('is_public', true)
             ->where('user_id', '!=', $user->id)
-            ->where('type', 'glb')
-            ->select(['id', 'name', 'category_id', 'thumbnail_path', 'is_pro', 'is_public', 'file_size'])
+            ->select(['id', 'name', 'category_id', 'thumbnail_path', 'is_pro', 'is_public', 'file_size', 'type'])
             ->get();
  
         // Gabungkan & resolve thumbnail URL
         $resolve = fn($assets) => $assets->map(fn($asset) => [
             'id'            => $asset->id,
             'name'          => $asset->name,
+            'type'          => $asset->type,
             'category'      => $asset->category?->name,
             'category_id'   => $asset->category_id,
             'is_pro'        => $asset->is_pro,
@@ -123,7 +122,7 @@ class AssetController extends Controller
         }
  
         $request->validate([
-            'file'        => 'required|file|max:'. config('services.upload.max_file_size_mb', 10240),
+            'file'        => 'required|file|max:'. config('upload.limits.glb'),
             'thumbnail'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'name'        => 'required|string|max:100',
             'category_id' => 'nullable|exists:asset_categories,id',
@@ -135,9 +134,9 @@ class AssetController extends Controller
  
         // Validasi ekstensi
         $ext = strtolower($file->getClientOriginalExtension());
-        if (!in_array($ext, ['glb', 'gltf'])) {
-            return $this->error('Hanya file .glb dan .gltf yang diizinkan', 422);
-        }
+        if (!in_array($ext, ['glb', 'gltf', 'obj'])) {
+            return $this->error('Hanya file .glb, .obj dan .gltf yang diizinkan', 422);
+        } 
  
         // Upload ke R2
         $uploaded = $this->storageService->uploadAsset3D($file, $request->user()->id);
@@ -160,6 +159,13 @@ class AssetController extends Controller
             $categoryId = $category->id;
         }
  
+        if (!$categoryId) {
+            $category = AssetCategory::firstOrCreate(
+                ['name' => 'Lainnya'],
+                ['slug' => 'lainnya']
+            );
+            $categoryId = $category->id;
+        }
         
         try {
             $asset = Asset::create([
@@ -168,7 +174,7 @@ class AssetController extends Controller
                 'original_name'  => $file->getClientOriginalName(),
                 'file_path'      => $uploaded['path'],
                 'thumbnail_path' => $thumbnailPath,
-                'type'           => 'glb',
+                'type'           => $ext,
                 'category_id'    => $categoryId,
                 'is_pro'         => false,
                 'is_public'      => $request->boolean('is_public', false),

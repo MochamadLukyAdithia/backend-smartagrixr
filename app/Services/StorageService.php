@@ -73,17 +73,16 @@ class StorageService
     }
  
     /**
-     * Upload aset 3D (model GLB)
+     * Upload aset 3D
      * Path: assets/3d/{user_id}/{filename}
      */
     public function uploadAsset3D(
         UploadedFile $file,
         int $userId
     ): array {
-        // Khusus GLB/GLTF
         $extension = strtolower($file->getClientOriginalExtension());
-        if (!in_array($extension, ['glb', 'gltf'])) {
-            throw new \Exception('Hanya file .glb dan .gltf yang diizinkan untuk aset 3D');
+        if (!in_array($extension, ['glb', 'gltf', 'obj'])) {
+            throw new \Exception('Hanya file .glb, .obj dan .gltf yang diizinkan untuk aset 3D');
         }
  
         $filename = $this->generateFilename($file->getClientOriginalName());

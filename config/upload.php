@@ -21,8 +21,9 @@ return [
         'mp4'  => 10240,
         'mov'  => 10240,
         // 3D
-        'glb'  => 10240,
-        'gltf' => 10240,
+        'glb'  => 102400,
+        'gltf' => 102400,
+        'obj' => 102400,
         // Archive
         'zip'  => 10240,
         'default' => 10240,
@@ -36,7 +37,7 @@ return [
         // Video
         'mp4', 'mov',
         // 3D
-        'glb', 'gltf',
+        'glb', 'gltf', 'obj',
         // Archive
         'zip',
     ],

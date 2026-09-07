@@ -14,6 +14,7 @@ class Asset extends Model
         'type', 'category_id', 'is_pro', 'is_public',
         'file_size', 'original_name',
     ];
+    
  
     protected $casts = [
         'is_pro'    => 'boolean',
