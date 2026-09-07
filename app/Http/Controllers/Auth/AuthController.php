@@ -324,4 +324,38 @@ class AuthController extends Controller
             ],
         ]);
     }
+
+    /**
+     * POST /api/logout
+     * Logout dari device saat ini
+     */
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        AuditLog::record(
+            event:  'auth.logout',
+            entity: $request->user(),
+            reason: 'User logout dari device',
+        );
+
+        return response()->json(['message' => 'Logout berhasil']);
+    }
+
+    /**
+     * POST /api/logout/all-devices
+     * Logout dari semua device
+     */
+    public function logoutAllDevices(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        AuditLog::record(
+            event:  'auth.logout_all_devices',
+            entity: $request->user(),
+            reason: 'User logout dari semua device',
+        );
+
+        return response()->json(['message' => 'Logout dari semua device berhasil']);
+    }
 }

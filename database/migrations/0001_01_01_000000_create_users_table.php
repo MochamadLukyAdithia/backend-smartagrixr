@@ -23,6 +23,7 @@ return new class extends Migration
                 'dosen',
                 'mahasiswa',
                 'tendik',
+                'admin',
                 'umum',
             ])->default('umum');
             $table->boolean('is_unej_verified')->default(false);
