@@ -4,3 +4,17 @@
 
 [phases.setup]
 	cmds = ['UPLOAD_INI_PATH=$(find /nix/store/*-php-*/lib -name php.ini -print0 | head -z -n 1 | rev | cut -c 9- | rev)/upload.ini; echo "upload_max_filesize=${UPLOAD_MAX_FILESIZE};" >> $UPLOAD_INI_PATH; echo "post_max_size=${POST_MAX_SIZE};" >> $UPLOAD_INI_PATH']
+	nixPkgs = ['php83', 'php83Extensions.pdo', 'php83Extensions.pdo_pgsql', 'php83Extensions.mbstring', 'php83Extensions.xml', 'php83Extensions.curl', 'php83Extensions.zip', 'php83Extensions.gd', 'composer']
+
+[phases.build]
+cmds = [
+    'mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs',
+    'chmod -R 775 storage bootstrap/cache',
+    'composer install --no-dev --optimize-autoloader --ignore-platform-reqs',
+    'php artisan config:cache',
+    'php artisan route:cache',
+    'php artisan view:cache',
+]
+
+[start]
+cmd = 'php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=$PORT'
