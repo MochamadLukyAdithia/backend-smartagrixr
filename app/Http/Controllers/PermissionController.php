@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Http\Controllers;
+
 use App\Services\PermissionService;
  
 class PermissionController extends Controller

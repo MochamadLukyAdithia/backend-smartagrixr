@@ -1,2 +1,2 @@
-web: php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=$PORT
+web: mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=$PORT
 worker: php artisan queue:work redis --tries=3 --timeout=90

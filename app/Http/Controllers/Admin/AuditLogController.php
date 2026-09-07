@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Http\Controllers\Admin;
+
 use App\Models\AuditLog;
  
 class AuditLogController extends Controller
