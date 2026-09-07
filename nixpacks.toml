@@ -20,8 +20,8 @@
 cmds = [
     'mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs',
     'chmod -R 775 storage bootstrap/cache',
-    'composer install --no-dev --optimize-autoloader --ignore-platform-reqs',
     'php artisan config:cache',
+    'composer install --no-dev --optimize-autoloader --ignore-platform-reqs 2>&1 || true',
     'php artisan route:cache',
     'php artisan view:cache',
 ]
