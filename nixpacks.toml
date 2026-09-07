@@ -13,7 +13,8 @@
 		'php83Extensions.xml',
 		'php83Extensions.curl',
 		'php83Extensions.zip',
-		'php83Extensions.gd'
+		'php83Extensions.gd',
+		'nodejs_20'
 	]
 
 [phases.build]
