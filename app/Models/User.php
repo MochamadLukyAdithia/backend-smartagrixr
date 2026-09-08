@@ -81,6 +81,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(AuditLog::class);
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->unej_role === 'admin';
+    }
+
     public function isDosen(): bool
     {
         return $this->unej_role === 'dosen' && $this->is_unej_verified;
@@ -166,5 +171,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Classroom::class, 'classroom_user')
             ->withPivot('role', 'enrolled_at')
             ->withTimestamps();
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->unej_role === 'admin';
     }
 }
