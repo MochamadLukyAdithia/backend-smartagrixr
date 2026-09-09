@@ -4,15 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use App\Models\{Post, Comment};
 
 class CommentController extends Controller
 {
+    use ApiResponse;
+
     /**
      * GET /posts/{id}/comments — ambil semua comment + replies
      */
     public function index(Request $request, int $postId)
     {
-        $post    = \App\Models\Post::findOrFail($postId);
+        $post = Post::find($postId);
+        if (!$post) {
+            return $this->notFound('Post tidak ditemukan');
+        }
+
         $userId  = $request->user()->id;
  
         $comments = $post->comments()
@@ -42,7 +49,10 @@ class CommentController extends Controller
      */
     public function store(Request $request, int $postId)
     {
-        $post = \App\Models\Post::with('classroom')->findOrFail($postId);
+        $post = Post::with('classroom')->find($postId);
+        if (!$post) {
+            return $this->notFound('Post tidak ditemukan');
+        }
  
         // Hanya member kelas yang bisa comment
         if (!$post->classroom->isMember($request->user()->id)) {
@@ -56,7 +66,7 @@ class CommentController extends Controller
         $comment = \App\Models\Comment::create([
             'user_id'   => $request->user()->id,
             'post_id'   => $postId,
-            'parent_id' => null, // comment biasa
+            'parent_id' => null,
             'body'      => $data['body'],
         ]);
  
@@ -72,11 +82,14 @@ class CommentController extends Controller
      */
     public function reply(Request $request, int $commentId)
     {
-        $parent = \App\Models\Comment::with('post.classroom')->findOrFail($commentId);
+        $parent = Comment::with('post.classroom')->find($commentId);
+        if (!$parent) {
+            return $this->notFound('Komentar tidak ditemukan');
+        }
  
         // Cegah reply ke reply (hanya 1 level)
         if ($parent->isReply()) {
-            return response()->json(['message' => 'Tidak bisa reply ke reply'], 400);
+            return $this->error('Tidak bisa reply ke reply', 400);
         }
  
         if (!$parent->post->classroom->isMember($request->user()->id)) {
@@ -87,7 +100,7 @@ class CommentController extends Controller
             'body' => 'required|string|max:2000',
         ]);
  
-        $reply = \App\Models\Comment::create([
+        $reply = Comment::create([
             'user_id'   => $request->user()->id,
             'post_id'   => $parent->post_id,
             'parent_id' => $commentId, // ← ini reply
@@ -106,14 +119,17 @@ class CommentController extends Controller
      */
     public function destroy(Request $request, int $commentId)
     {
-        $comment = \App\Models\Comment::findOrFail($commentId);
+        $comment = Comment::with('post.classroom')->find($commentId);
+        if (!$comment) {
+            return $this->notFound('Komentar tidak ditemukan');
+        }
  
         // Hanya penulis atau guru yang bisa hapus
         $isAuthor  = $comment->user_id === $request->user()->id;
         $isTeacher = $comment->post->classroom->isTeacher($request->user()->id);
  
         if (!$isAuthor && !$isTeacher) {
-            return response()->json(['message' => 'Tidak bisa menghapus comment ini'], 403);
+            return $this->forbidden('Anda tidak bisa menghapus komentar ini');
         }
  
         $comment->delete();

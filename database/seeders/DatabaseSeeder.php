@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\{DomainWhitelist, Plan};
-use Database\Seeders\AssetCategorySeeder;
+use Database\Seeders\{AssetCategorySeeder, SubjectSeeder};
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PlanSeeder::class,
             DomainWhitelistSeeder::class,
             AssetCategorySeeder::class,
+            SubjectSeeder::class,
         ]);
     }
 }

@@ -14,6 +14,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AssetCategoryController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SubmissionController;
+use App\Http\Controllers\LearningContentController;
 use App\Http\Middleware\ThrottleRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -123,6 +124,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/asset-categories/{id}',    [AssetCategoryController::class, 'update']);
         Route::delete('/asset-categories/{id}', [AssetCategoryController::class, 'destroy']);
     });
+
+    // Route::prefix('learn')->group(function () {
+    //     Route::post('/contents',         [LearningContentController::class, 'store']);
+    //     Route::put('/contents/{id}',     [LearningContentController::class, 'update']);
+    //     Route::delete('/contents/{id}',  [LearningContentController::class, 'destroy']);
+    // });
+});
+
+Route::prefix('learn')->group(function () {
+    Route::get('/',              [LearningContentController::class, 'home']);
+    Route::get('/subjects',      [LearningContentController::class, 'subjects']);
+    Route::get('/grades',        [LearningContentController::class, 'grades']);
+    Route::get('/contents',      [LearningContentController::class, 'index']);
+    Route::get('/contents/{id}', [LearningContentController::class, 'show']);
 });
 
 Route::get('/ar/project/{id}', function (int $id) {
