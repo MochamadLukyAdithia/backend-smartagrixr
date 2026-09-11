@@ -28,6 +28,21 @@ class LearningContentResource extends Resource
     protected static ?string $model = LearningContent::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    
+    protected static function cleanCanvaEmbed(?string $html): ?string
+    {
+        if (blank($html)) {
+            return $html;
+        }
+
+        $html = str_replace('""', '"', $html);
+
+        if (preg_match('/<div\b[^>]*>.*?<\/iframe>\s*<\/div>/is', $html, $matches)) {
+            return trim($matches[0]);
+        }
+
+        return $html;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -81,7 +96,8 @@ class LearningContentResource extends Resource
                 ->placeholder('Gunakan Kode penyematan HTML pada opsi embed Canva')
                 ->required()
                 ->rows(2)
-                ->columnSpanFull(),
+                ->columnSpanFull()
+                ->dehydrateStateUsing(fn (?string $state) => self::cleanCanvaEmbed($state)),
 
             Toggle::make('is_published')
                 ->label('Publikasikan')
