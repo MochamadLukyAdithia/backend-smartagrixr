@@ -73,11 +73,12 @@ class LearningContentResource extends Resource
                 ->visibility('private')
                 ->maxSize(2048)
                 ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                ->helperText('Kosongkan kalau ingin thumbnail diambil otomatis dari embed Canva.')
                 ->columnSpanFull(),
 
             Textarea::make('embed_url')
                 ->label('Embed URL (Canva)')
-                ->placeholder('https://www.canva.com/design/xxx/view?embed')
+                ->placeholder('Gunakan Kode penyematan HTML pada opsi embed Canva')
                 ->required()
                 ->rows(2)
                 ->columnSpanFull(),

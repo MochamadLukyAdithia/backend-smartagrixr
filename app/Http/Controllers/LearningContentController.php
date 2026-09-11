@@ -317,6 +317,7 @@ class LearningContentController extends Controller
             'content_type'  => $content->content_type,
             'subject'       => $content->subject?->only(['id', 'name', 'slug']),
             'grade_level'   => $content->gradeLevel?->only(['id', 'name', 'slug']),
+            'embed_url'     => $content->embed_url,
             'thumbnail_url' => $content->thumbnail_path
                 ? $this->storageService->temporaryUrl($content->thumbnail_path, 120)
                 : null,
