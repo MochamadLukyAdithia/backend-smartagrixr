@@ -54,6 +54,45 @@ class AssetController extends Controller
             'public_assets' => $resolve($publicAssets),
         ], 'Daftar aset berhasil diambil');
     }
+
+    /**
+     * GET /api/assets/public
+     * List aset publik (is_public = true) — tanpa perlu login.
+     * Aset Pro tetap ditandai "locked" (file_url disembunyikan),
+     * karena tidak ada user yang bisa diverifikasi status Pro-nya di sini.
+     */
+    public function publicIndex(Request $request)
+    {
+        $assets = Asset::where('is_public', true)
+            ->select(['id', 'name', 'category_id', 'thumbnail_path', 'file_path', 'is_pro', 'file_size', 'type'])
+            ->latest()
+            ->paginate(20);
+
+        $assets->getCollection()->transform(function ($asset) {
+            // Tanpa login, tidak ada cara verifikasi status Pro —
+            // jadi aset Pro selalu di-lock untuk endpoint publik ini.
+            $canAccessFile = !$asset->is_pro;
+
+            return [
+                'id'            => $asset->id,
+                'name'          => $asset->name,
+                'type'          => $asset->type,
+                'category'      => $asset->category?->name,
+                'category_id'   => $asset->category_id,
+                'is_pro'        => $asset->is_pro,
+                'file_size'     => $asset->file_size,
+                'thumbnail_url' => $asset->thumbnail_path
+                    ? $this->storageService->temporaryUrl($asset->thumbnail_path, 120)
+                    : null,
+                'file_url' => $canAccessFile
+                    ? $this->storageService->temporaryUrl($asset->file_path, 30)
+                    : null,
+                'locked' => !$canAccessFile,
+            ];
+        });
+
+        return $this->success($assets, 'Daftar aset publik berhasil diambil');
+    }
  
     /**
      * GET /api/assets/{id}/url

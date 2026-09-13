@@ -132,6 +132,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // });
 });
 
+Route::get('/assets/public', [AssetController::class, 'publicIndex']);
+
 Route::prefix('learn')->group(function () {
     Route::get('/',              [LearningContentController::class, 'home']);
     Route::get('/subjects',      [LearningContentController::class, 'subjects']);
