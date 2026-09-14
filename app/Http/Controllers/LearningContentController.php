@@ -36,7 +36,7 @@ class LearningContentController extends Controller
             ])
             ->select(['id', 'title', 'subject_id', 'grade_level_id', 'thumbnail_path', 'embed_url', 'created_at'])
             ->latest()
-            ->take(6)
+            ->take(12)
             ->get()
             ->map(fn($c) => $this->formatContent($c));
  
