@@ -22,7 +22,8 @@ return new class extends Migration
                 'smp',
                 'sma',
                 'kuliah',
-            ])->default('sd');
+                'umum',
+            ]);
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
