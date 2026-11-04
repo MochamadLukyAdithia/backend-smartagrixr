@@ -15,6 +15,7 @@ use App\Http\Controllers\AssetCategoryController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\LearningContentController;
+use App\Http\Controllers\AiController;
 use App\Http\Middleware\ThrottleRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,16 @@ Route::get('/plans/{slug}', [PaymentController::class, 'detailPlan']);
 
 // Public (cek kode tanpa login)
 Route::get('/classrooms/resolve/{code}', [InviteController::class, 'resolve']);
+
+// AI 3D Generation Quota, Ticket, Consumption, Refund & History
+Route::prefix('ai')->group(function () {
+    Route::get('/quota',          [AiController::class, 'quota']);
+    Route::post('/verify-ticket', [AiController::class, 'verifyTicket']);
+    Route::post('/consume',       [AiController::class, 'consume']);
+    Route::post('/refund',        [AiController::class, 'refund']);
+    Route::get('/history',        [AiController::class, 'history']);
+    Route::post('/history',       [AiController::class, 'storeHistory']);
+});
  
 // Authenticated routes
 Route::middleware('auth:sanctum')->group(function () {
